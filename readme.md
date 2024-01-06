@@ -37,14 +37,14 @@ main :: proc() {
 	rbt.visit_all_sub_nodes(tree, tree.root, print_values)
 
 	 
-    // Build a graphvis file of the tree
-    // -
-    // Requires having VISUALIZATIONS defined during the build
-    // odin build . -define:VISUALIZATIONS=true
-	// -
+    	// Build a graphvis file of the tree
+    	// 
+    	// Requires having VISUALIZATIONS defined during the build
+    	// odin build . -define:VISUALIZATIONS=true
+	// 
 	// Can be turned into an image with `dot rbt-vis.dot -Tpng > rbt-vis.png`
-	// -
-    // Uncomment the following line:
+	// 
+    	// Uncomment the following line:
 	// rbt.tree_to_graphvis(tree, "./rbt-vis.dot")
 
 	// :-(
