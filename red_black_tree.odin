@@ -25,14 +25,24 @@ Tree :: struct($Key, $Value: typeid) where intrinsics.type_is_comparable(Key) {
 }
 
 @(private)
+get_color :: proc(node: ^$Node) -> Color {
+	return node.color
+}
+
+@(private)
+set_color :: proc(node: ^$Node, color: Color) {
+	node.color = color
+}
+
+@(private)
 init_node :: proc(tree: ^Tree($Key, $Value), key: Key, value: Value) -> ^Node(Key, Value) {
 	node := new(Node(Key, Value), tree.allocator)
 	node.key = key
 	node.value = value
-	node.color = Color.Red
 	node.parent = &tree.sentinel
 	node.left = &tree.sentinel
 	node.right = &tree.sentinel
+	set_color(node, Color.Red)
 	return node
 }
 
@@ -86,14 +96,14 @@ rotate_left :: proc(tree: ^$Tree, node: ^$Node) {
 rebalance_after_insert :: proc(tree: ^$Tree, node: ^$Node) {
 	node := node
 	uncle: ^Node
-	for (node != tree.root && node.parent.color == Color.Red) {
+	for (node != tree.root && get_color(node.parent) == Color.Red) {
 		// Rebalancing cases
 		if node.parent.parent != &tree.sentinel && node.parent == node.parent.parent.left {
 			uncle = node.parent.parent.right
-			if uncle != &tree.sentinel && uncle.color == Color.Red {
-				node.parent.color = Color.Black
-				uncle.color = Color.Black
-				node.parent.parent.color = Color.Red
+			if uncle != &tree.sentinel && get_color(uncle) == Color.Red {
+				set_color(node.parent, Color.Black)
+				set_color(uncle, Color.Black)
+				set_color(node.parent.parent, Color.Red)
 				node = node.parent.parent
 			} else {
 				if node == node.parent.right {
@@ -102,16 +112,16 @@ rebalance_after_insert :: proc(tree: ^$Tree, node: ^$Node) {
 					rotate_left(tree, node)
 				}
 				// Case 3
-				node.parent.color = Color.Black
-				node.parent.parent.color = Color.Red
+				set_color(node.parent, Color.Black)
+				set_color(node.parent.parent, Color.Red)
 				rotate_right(tree, node.parent.parent)
 			}
 		} else if node.parent.parent != &tree.sentinel {
 			uncle = node.parent.parent.left
-			if uncle != &tree.sentinel && uncle.color == Color.Red {
-				node.parent.color = Color.Black
-				uncle.color = Color.Black
-				node.parent.parent.color = Color.Red
+			if uncle != &tree.sentinel && get_color(uncle) == Color.Red {
+				set_color(node.parent, Color.Black)
+				set_color(uncle, Color.Black)
+				set_color(node.parent.parent, Color.Red)
 				node = node.parent.parent
 			} else {
 				if node == node.parent.left {
@@ -120,13 +130,13 @@ rebalance_after_insert :: proc(tree: ^$Tree, node: ^$Node) {
 					rotate_right(tree, node)
 				}
 				// Case 3
-				node.parent.color = Color.Black
-				node.parent.parent.color = Color.Red
+				set_color(node.parent, Color.Black)
+				set_color(node.parent.parent, Color.Red)
 				rotate_left(tree, node.parent.parent)
 			}
 		}
 	}
-	tree.root.color = Color.Black
+	set_color(tree.root, Color.Black)
 }
 
 @(private)
@@ -151,7 +161,7 @@ minimum_node :: proc(tree: ^$Tree, node: ^$TreeNode) -> ^TreeNode {
 find_successor :: proc(tree: ^$Tree, node: ^$Node) -> ^Node {
 	assert(node != nil)
 	node := node
-	if node.left.color == Color.Red {
+	if get_color(node.left) == Color.Red {
 		return maximum_node(tree, node.left)
 	} else if node.right != &tree.sentinel {
 		return minimum_node(tree, node.right)
@@ -168,58 +178,58 @@ find_successor :: proc(tree: ^$Tree, node: ^$Node) -> ^Node {
 rebalance_after_removal :: proc(tree: ^$Tree, node: ^$Node) {
 	node := node
 	sibling: ^Node
-	for tree.root != node && node.color == Color.Black {
+	for tree.root != node && get_color(node) == Color.Black {
 		if node == node.parent.left {
 			sibling = node.parent.right
-			if sibling.color == Color.Red {
-				sibling.color = Color.Black
-				node.parent.color = Color.Red
+			if get_color(sibling) == Color.Red {
+				set_color(sibling, Color.Black)
+				set_color(node.parent, Color.Red)
 				rotate_left(tree, node.parent)
 				sibling = node.parent.right
 			}
-			if sibling.right.color == Color.Black && sibling.left.color == Color.Black {
-				sibling.color = Color.Red
+			if get_color(sibling.right) == Color.Black && get_color(sibling.left) == Color.Black {
+				set_color(sibling, Color.Red)
 				node = node.parent
 			} else {
-				if sibling.right.color == Color.Black {
-					sibling.color = Color.Red
-					sibling.left.color = Color.Black
+				if get_color(sibling.right) == Color.Black {
+					set_color(sibling, Color.Red)
+					set_color(sibling.left, Color.Black)
 					rotate_right(tree, sibling)
 					sibling = node.parent.right
 				}
-				sibling.color = node.parent.color
-				node.parent.color = Color.Black
-				sibling.right.color = Color.Black
+				set_color(sibling, get_color(node.parent))
+				set_color(node.parent, Color.Black)
+				set_color(sibling.right, Color.Black)
 				rotate_left(tree, node.parent)
 				node = tree.root
 			}
 		} else {
 			sibling = node.parent.left
-			if sibling.color == Color.Red {
-				sibling.color = Color.Black
-				node.parent.color = Color.Red
+			if get_color(sibling) == Color.Red {
+				set_color(sibling, Color.Black)
+				set_color(node.parent, Color.Red)
 				rotate_right(tree, node.parent)
 				sibling = node.parent.left
 			}
-			if sibling.right.color == Color.Black && sibling.left.color == Color.Black {
-				sibling.color = Color.Red
+			if get_color(sibling.right) == Color.Black && get_color(sibling.left) == Color.Black {
+				set_color(sibling, Color.Red)
 				node = node.parent
 			} else {
-				if sibling.left.color == Color.Black {
-					sibling.color = Color.Red
-					sibling.right.color = Color.Black
+				if get_color(sibling.left) == Color.Black {
+					set_color(sibling, Color.Red)
+					set_color(sibling.right, Color.Black)
 					rotate_left(tree, sibling)
 					sibling = node.parent.left
 				}
-				sibling.color = node.parent.color
-				node.parent.color = Color.Black
-				sibling.left.color = Color.Black
+				set_color(sibling, get_color(node.parent))
+				set_color(node.parent, Color.Black)
+				set_color(sibling.left, Color.Black)
 				rotate_right(tree, node.parent)
 				node = tree.root
 			}
 		}
 	}
-	node.color = Color.Black
+	set_color(node, Color.Black)
 }
 
 @(private)
@@ -298,7 +308,7 @@ remove_node :: proc(tree: ^Tree($Key, $Value), key: Key) -> (Value, bool) {
 			successor.key = key_to_be_deleted
 			successor.value = value_to_be_deleted
 		}
-		if successor.color == Color.Black {
+		if get_color(successor) == Color.Black {
 			rebalance_after_removal(tree, child)
 		}
 		return successor.value, true
@@ -446,4 +456,56 @@ test_simple_tree :: proc(t: ^testing.T) {
 	// Try to find a non-existent key
 	_, ok = find(tree, "Ravager")
 	testing.expect(t, !ok)
+}
+
+
+main :: proc() {
+	tree := init(string, string)
+
+	insert_node(tree, "Mal", "Captain")
+	insert_node(tree, "Zoe", "First Mate")
+	insert_node(tree, "Wash", "Pilot")
+	insert_node(tree, "Inara", "Consort")
+	insert_node(tree, "Jayne", "Muscle")
+	insert_node(tree, "Kaylee", "Mechanic")
+	insert_node(tree, "Simon", "Doctor")
+	insert_node(tree, "River", "Secret Weapon")
+	insert_node(tree, "Book", "Preacher")
+
+	// Duplicates are not allowed
+	assert(!insert_node(tree, "Mal", "Can't have two captains"))
+
+	// Visitor fun
+	fmt.println("\nThe Crew:")
+	print_values :: proc(value: string) {
+		fmt.printf("\t%s\n", value)
+	}
+	visit_all_sub_nodes(tree, tree.root, print_values)
+
+
+	// Build a graphvis file of the tree
+	// -
+	// Requires having VISUALIZATIONS defined during the build
+	// odin build . -define:VISUALIZATIONS=true
+	// -
+	// Can be turned into an image with `dot rbt-vis.dot -Tpng > rbt-vis.png`
+	// -
+	// Uncomment the following line:
+	// rbt.tree_to_graphvis(tree, "./rbt-vis.dot")
+
+	// :-(
+	remove_node(tree, "Wash")
+
+	// Find a known key
+	p, ok := find(tree, "Mal")
+	if ok {
+		fmt.printf("Mal is the %s\n", p)
+	}
+
+	//Try to find a non - existent key
+	p, ok = find(tree, "Ravager")
+	if !ok {
+		fmt.println("No ravagers onboard.")
+	}
+
 }
