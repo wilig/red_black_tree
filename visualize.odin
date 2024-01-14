@@ -38,7 +38,7 @@ when VISUALIZATIONS {
 				f,
 				"%s [style=\"filled\" fontname=\"Arial\" fontcolor=\"white\" fillcolor=\"%s\"]\n",
 				fmt.sbprint(&sb, node.key),
-				node.color == Color.Red ? "red" : "black",
+				get_color(node) == Color.Red ? "red" : "black",
 			)
 			strings.builder_reset(&sb)
 			if node.left != &tree.sentinel {
