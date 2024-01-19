@@ -1,7 +1,6 @@
 # Red Black Tree Implementation in Odin
 
-A simple red black tree implementation straight from [Introduction to Algorithms](https://en.wikipedia.org/wiki/Introduction_to_Algorithms).  Color information is encoded in the LSB of the parent pointer to conserve memory.
-
+A simple red black tree implementation straight from [Introduction to Algorithms](https://en.wikipedia.org/wiki/Introduction_to_Algorithms).  
 
 ### No warranty expressed or implied, use at your own risk.
 
@@ -67,7 +66,9 @@ main :: proc() {
 
 ## Debugging
 
-When the Odin `-debug` flag during compilation, the parent pointer and color attribute will be store independently so debuggers can easy inspect them.
+When compiled normally, the color information is encoded in the LSB of the parent pointer.
+
+When the Odin `-debug` flag is set during compilation, the parent pointer and color attribute will be stored independently so debuggers can easily inspect the values.
 
 ## Copyright
 
