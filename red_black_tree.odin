@@ -11,12 +11,22 @@ Color :: enum {
 	Red,
 }
 
-// Node color is encoded in the parent pointer.
-Node :: struct($Key, $Value: typeid) where intrinsics.type_is_comparable(Key) {
-	parent:      uintptr,
-	left, right: ^Node(Key, Value),
-	key:         Key,
-	value:       Value,
+when ODIN_DEBUG {
+	// In debug mode, store the color separately to allow for easier integration with debuggers
+	Node :: struct($Key, $Value: typeid) where intrinsics.type_is_comparable(Key) {
+		left, right, parent: ^Node(Key, Value),
+		color:               Color,
+		key:                 Key,
+		value:               Value,
+	}
+} else {
+	// In normal operation, node color is encoded in the parent pointer to save space.
+	Node :: struct($Key, $Value: typeid) where intrinsics.type_is_comparable(Key) {
+		parent:      uintptr,
+		left, right: ^Node(Key, Value),
+		key:         Key,
+		value:       Value,
+	}
 }
 
 Tree :: struct($Key, $Value: typeid) where intrinsics.type_is_comparable(Key) {
@@ -27,13 +37,21 @@ Tree :: struct($Key, $Value: typeid) where intrinsics.type_is_comparable(Key) {
 
 @(private)
 get_color :: #force_inline proc(node: ^$Node) -> Color {
-	return cast(Color)(node.parent & 1)
+	when ODIN_DEBUG {
+		return node.color
+	} else {
+		return cast(Color)(node.parent & 1)
+	}
 }
 
 @(private)
 set_color :: #force_inline proc(node: ^$Node, color: Color) {
-	node.parent = (node.parent >> 1) << 1 // Clear color attribute
-	node.parent = node.parent | cast(uintptr)int(color) // Set it to the new value
+	when ODIN_DEBUG {
+		node.color = color
+	} else {
+		node.parent = (node.parent >> 1) << 1 // Clear color attribute
+		node.parent = node.parent | cast(uintptr)int(color) // Set it to the new value
+	}
 }
 
 @(private)
@@ -44,15 +62,23 @@ copy_color_from :: #force_inline proc(dest_node: ^$Node, src_node: ^Node) {
 // Parent pointers need special handling to account for storing the color attribute
 @(private)
 get_parent :: #force_inline proc(node: ^$Node) -> ^Node {
-	parent_ptr := (node.parent >> 1) << 1 // Remove the color attribute
-	return cast(^Node)parent_ptr
+	when ODIN_DEBUG {
+		return node.parent
+	} else {
+		parent_ptr := (node.parent >> 1) << 1 // Remove the color attribute
+		return cast(^Node)parent_ptr
+	}
 }
 
 @(private)
 set_parent :: #force_inline proc(node: ^$Node, parent: ^Node) {
-	current_color := cast(Color)(node.parent & 1)
-	node.parent = cast(uintptr)parent
-	set_color(node, current_color)
+	when ODIN_DEBUG {
+		node.parent = parent
+	} else {
+		current_color := cast(Color)(node.parent & 1)
+		node.parent = cast(uintptr)parent
+		set_color(node, current_color)
+	}
 }
 
 @(private)
